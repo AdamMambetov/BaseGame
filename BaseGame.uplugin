@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 4.23,
+	"VersionName": "4.23",
+	"FriendlyName": "BaseGame",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "BaseGame",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
