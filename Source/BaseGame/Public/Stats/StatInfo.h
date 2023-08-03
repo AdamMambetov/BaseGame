@@ -11,21 +11,25 @@ struct FStatInfo
 {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Categories = "Stat", DisplayName = "Id"))
-    FGameplayTag ID = FGameplayTag::RequestGameplayTag(FName("Stat"));
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BaseGame | Stat |")
+    FGameplayTag Id;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = 0.f))
-    float CurrentValue;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (ClampMin = 0.f))
+    float CurrentValue = 0.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = 0.f))
-    float MaxValue;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (ClampMin = 0.f))
+    float MaxValue = 0.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    bool bCanRegenerate;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |")
+    bool bCanRegenerate = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bCanRegenerate", ClampMin = 0.f))
-    float RegenerationRate;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (EditCondition = "bCanRegenerate", ClampMin = 0.f))
+    float RegenerationRate = 0.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bCanRegenerate", Units = "Seconds", ClampMin = 0.f))
-    float RegenerationDelay;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |",
+        meta = (EditCondition = "bCanRegenerate", Units = "Seconds", ClampMin = 0.f))
+    float RegenerationDelay = 0.f;
+
+    UPROPERTY(VisibleAnywhere, Category = "BaseGame | Stat |")
+    FDateTime RegenerationStartDateTime;
 };

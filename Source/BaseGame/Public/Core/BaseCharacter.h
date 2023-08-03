@@ -6,16 +6,14 @@
 #include "GameFramework/Character.h"
 #include "Perception/AISightTargetInterface.h"
 #include "GenericTeamAgentInterface.h"
-#include "Core/ECharacterState.h"
+#include "GameplayTagsManager.h"
 #include "BaseCharacter.generated.h"
 
 UDELEGATE()
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCharacterStateChanched, ECharacterState, CharacterState);
-
-class UStatsComponent;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCharacterStateChanched, const FGameplayTag&, CharacterState);
 
 UCLASS()
-class BASEGAME_API ABaseCharacter : public ACharacter, public IAISightTargetInterface, public IGenericTeamAgentInterface
+class BASEGAME_API ABaseCharacter : public ACharacter
 {
     GENERATED_BODY()
 
@@ -23,56 +21,53 @@ public:
     // Default Constructor
     ABaseCharacter();
 
-    // Actor Begin
+    // AActor Begin
 
     virtual void Tick(float DeltaSeconds) override;
 
-    // Actor End
+    // AActor End
 
 public:
-    // BaseCharacter Begin Functions
+    // ABaseCharacter Begin Functions
 
-    UFUNCTION(BlueprintGetter, Category = "BaseGame | BaseCharacter | AI |")
-    const int32 GetId() { return ID; }
+    UFUNCTION(BlueprintGetter)
+    int32 GetId() const { return ID; }
 
-    UFUNCTION(BlueprintSetter, Category = "BaseGame | BaseCharacter | AI |")
-    const void SetId(int32 NewId);
+    UFUNCTION(BlueprintSetter)
+    void SetId(const int32 NewId);
 
-    UFUNCTION(BlueprintGetter, Category = "BaseGame | BaseCharacter |")
-    const ECharacterState GetCharacterState() { return CharacterState; }
+    UFUNCTION(BlueprintGetter, Category = "BaseGame | BaseCharacter")
+    FGameplayTag GetCharacterState() const { return CharacterState; }
 
-    UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "BaseGame | BaseCharacter |")
-    void ServerSetCharacterState(ECharacterState NewCharacterState);
-    bool ServerSetCharacterState_Validate(ECharacterState NewCharacterState);
-    void ServerSetCharacterState_Implementation(ECharacterState NewCharacterState);
+    UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "BaseGame | BaseCharacter",
+        meta = (DisplayName = "Set Character State"))
+    void ServerSetCharacterState(const FGameplayTag& NewCharacterState);
+    bool ServerSetCharacterState_Validate(const FGameplayTag& NewCharacterState);
+    void ServerSetCharacterState_Implementation(const FGameplayTag& NewCharacterState);
 
 private:
-    UFUNCTION(NetMulticast, Reliable, Category = "BaseGame | BaseCharacter |")
-    void MulticastCallOnCharacterStateChanged(ECharacterState NewCharacterState);
-    void MulticastCallOnCharacterStateChanged_Implementation(ECharacterState NewCharacterState);
+    UFUNCTION(NetMulticast, Reliable, Category = "BaseGame | BaseCharacter")
+    void MulticastCallOnCharacterStateChanged(const FGameplayTag& NewCharacterState);
+    void MulticastCallOnCharacterStateChanged_Implementation(const FGameplayTag& NewCharacterState);
 
-    // BaseCharacter End Functions
+    // ABaseCharacter End Functions
 
 protected:
-    // BaseCharacter Begin Dispatchers
+    // ABaseCharacter Begin Dispatchers
 
-    UPROPERTY(BlueprintAssignable, Category = "BaseGame | BaseCharacter |")
+    UPROPERTY(BlueprintAssignable, Category = "BaseGame | BaseCharacter")
     FOnCharacterStateChanched OnCharacterStateChanched;
 
-    // BaseCharacter End Dispatchers
+    // ABaseCharacter End Dispatchers
 
 private:
-    // BaseCharacter Begin Variables
+    // ABaseCharacter Begin Variables
 
-    UPROPERTY(EditAnywhere, BlueprintGetter = GetId, BlueprintSetter = SetId, Category = "BaseGame | BaseCharacter | AI |")
+    UPROPERTY(EditAnywhere, BlueprintGetter = GetId, BlueprintSetter = SetId, Category = "BaseGame | BaseCharacter")
     int32 ID = 0;
 
-    UPROPERTY(Replicated, EditAnywhere, BlueprintGetter = GetCharacterState, Category = "BaseGame | BaseCharacter |")
-    ECharacterState CharacterState;
+    UPROPERTY(Replicated, EditAnywhere, BlueprintGetter = GetCharacterState, Category = "BaseGame | BaseCharacter")
+    FGameplayTag CharacterState;
 
-public:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BaseGame | BaseCharacter |")
-    UStatsComponent* StatsComponent;
-
-    // BaseCharacter End Variables
+    // ABaseCharacter End Variables
 };

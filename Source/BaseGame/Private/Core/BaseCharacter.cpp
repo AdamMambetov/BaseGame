@@ -7,10 +7,7 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All)
 
-ABaseCharacter::ABaseCharacter() : Super()
-{
-    StatsComponent = CreateDefaultSubobject<UStatsComponent>(TEXT("Stats Component"));
-}
+ABaseCharacter::ABaseCharacter() {}
 
 void ABaseCharacter::Tick(float DeltaSeconds)
 {
@@ -23,7 +20,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     DOREPLIFETIME(ABaseCharacter, CharacterState);
 }
 
-const void ABaseCharacter::SetId(int32 NewId)
+void ABaseCharacter::SetId(int32 NewId)
 {
     if (NewId == ID || NewId < 0) return;
 
@@ -31,18 +28,22 @@ const void ABaseCharacter::SetId(int32 NewId)
     ID = NewId;
 }
 
-bool ABaseCharacter::ServerSetCharacterState_Validate(ECharacterState NewCharacterState)
+bool ABaseCharacter::ServerSetCharacterState_Validate(const FGameplayTag& NewCharacterState)
 {
-    return NewCharacterState != CharacterState;
+    const FGameplayTag CharacterStateTag = FGameplayTag::RequestGameplayTag(TEXT("CharacterState"));
+
+    if (!CharacterStateTag.IsValid()) return false;
+
+    return (!CharacterState.MatchesTagExact(NewCharacterState)) && NewCharacterState.MatchesTag(CharacterStateTag);
 }
 
-void ABaseCharacter::ServerSetCharacterState_Implementation(ECharacterState NewCharacterState)
+void ABaseCharacter::ServerSetCharacterState_Implementation(const FGameplayTag& NewCharacterState)
 {
     CharacterState = NewCharacterState;
     MulticastCallOnCharacterStateChanged(NewCharacterState);
 }
 
-void ABaseCharacter::MulticastCallOnCharacterStateChanged_Implementation(ECharacterState NewCharacterState)
+void ABaseCharacter::MulticastCallOnCharacterStateChanged_Implementation(const FGameplayTag& NewCharacterState)
 {
     OnCharacterStateChanched.Broadcast(NewCharacterState);
 }

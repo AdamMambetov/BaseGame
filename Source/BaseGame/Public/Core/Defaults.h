@@ -39,6 +39,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "BaseGame | Defaults |")
     static FGameplayTag GetTagParent(const FGameplayTag Tag);
 
-    UFUNCTION(BlueprintPure, Category = "BaseGame | Defaults |")
-    static FGameplayTag MakeTagFromName(const FName TagName);
+    UFUNCTION(BlueprintPure, Category = "BaseGame | Defaults |", meta = (AutoCreateRefTerm = "TagName"))
+    static FGameplayTag MakeTagFromName(const FName& TagName);
+
+    UFUNCTION(BlueprintPure, Category = "BaseGame | Defaults |", meta = (AutoCreateRefTerm = "TagName"))
+    static FGameplayTag MakeTag(const FString& TagName);
 };

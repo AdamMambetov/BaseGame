@@ -1,36 +1,42 @@
 // Copyright UC Games, Inc. All Rights Reserved.
 
 #include "Core/Defaults.h"
-#include "GameplayTagsManager.h"
-#include "Core/BaseGameSettings.h"
 #include "GameplayTagsSettings.h"
 
 bool UDefaults::IsValidStatId(const FGameplayTag& StatId)
 {
-    auto Root = GetMutableDefault<UBaseGameSettings>()->StatsRoot;
+    const FGameplayTag Root = MakeTag("Stat");
 
-    return UGameplayTagsManager::Get().RequestGameplayTagChildren(Root).HasTag(StatId);
+    if (!Root.IsValid()) return false;
+
+    return GetChildrensByTag(Root, /**bAllChildrens*/ true).Contains(StatId);
 }
 
 bool UDefaults::IsValidItemId(const FGameplayTag& ItemId)
 {
-    auto Root = GetMutableDefault<UBaseGameSettings>()->ItemsRoot;
+    const FGameplayTag Root = MakeTag("Item");
 
-    return UGameplayTagsManager::Get().RequestGameplayTagChildren(Root).HasTag(ItemId);
+    if (!Root.IsValid()) return false;
+
+    return GetChildrensByTag(Root, /**bAllChildrens*/ true).Contains(ItemId);
 }
 
 bool UDefaults::IsValidSlotContainerId(const FGameplayTag& SlotContainerId)
 {
-    auto Root = GetMutableDefault<UBaseGameSettings>()->SlotContainersRoot;
+    const FGameplayTag Root = MakeTag("SlotContainer");
 
-    return UGameplayTagsManager::Get().RequestGameplayTagChildren(Root).HasTag(SlotContainerId);
+    if (!Root.IsValid()) return false;
+
+    return GetChildrensByTag(Root, /**bAllChildrens*/ true).Contains(SlotContainerId);
 }
 
 bool UDefaults::IsValidAttackId(const FGameplayTag& AttackId)
 {
-    auto Root = GetMutableDefault<UBaseGameSettings>()->AttacksRoot;
+    const FGameplayTag Root = MakeTag("Character");
 
-    return UGameplayTagsManager::Get().RequestGameplayTagChildren(Root).HasTag(AttackId);
+    if (!Root.IsValid()) return false;
+
+    return UGameplayTagsManager::Get().RequestGameplayTagChildren(Root).HasTagExact(AttackId);
 }
 
 TArray<UDataTable*> UDefaults::GetDataTableList()
@@ -51,40 +57,33 @@ TArray<FGameplayTag> UDefaults::GetChildrensByTag(const FGameplayTag Tag, const 
     TArray<FGameplayTag> ReturnArray;
     if (!Tag.IsValid()) return ReturnArray;
 
-    TArray<UDataTable*> DataTables = GetDataTableList();
-    for (const auto& Table : DataTables)
+    const FGameplayTag L_Root = GetTagParents(Tag).Last();
+    TArray<FGameplayTag> AllTagsByRoot;
+    UGameplayTagsManager::Get().RequestGameplayTagChildren(L_Root).GetGameplayTagArray(AllTagsByRoot);
+
+    for (auto L_Tag : AllTagsByRoot)
     {
-        TArray<FName> RowNames = Table->GetRowNames();
-        for (const auto& RowName : RowNames)
+        if (!L_Tag.MatchesTag(Tag)) continue;
+
+        if (!bAllChildrens)
         {
-            FGameplayTag L_Tag = MakeTagFromName(RowName);
-
-            if (Tag.MatchesTagExact(L_Tag))
+            auto Parents = GetTagParents(L_Tag);
+            for (int32 i = 0; i < Parents.Num(); ++i)
             {
-                ReturnArray.AddUnique(L_Tag);
-                return ReturnArray;
+                if (Parents[i] == Tag) break;
+
+                L_Tag = Parents[i];
             }
-
-            if (!Tag.MatchesTag(L_Tag)) continue;
-
-            if (!bAllChildrens)
-            {
-                auto Parents = GetTagParents(L_Tag);
-                for (int32 i = 0; i < Parents.Num(); ++i)
-                {
-                    if (Parents[i] == Tag) break;
-
-                    L_Tag = Parents[i];
-                }
-            }
-            ReturnArray.AddUnique(L_Tag);
         }
-
-        if (!ReturnArray.IsEmpty()) return ReturnArray;
+        ReturnArray.AddUnique(L_Tag);
     }
-
+    if (ReturnArray.Num() == 0)
+    {
+        ReturnArray.Add(Tag);
+    }
     return ReturnArray;
 }
+
 TArray<FGameplayTag> UDefaults::GetTagParents(const FGameplayTag Tag)
 {
     TArray<FGameplayTag> ReturnArray;
@@ -96,7 +95,13 @@ FGameplayTag UDefaults::GetTagParent(const FGameplayTag Tag)
 {
     return Tag.RequestDirectParent();
 }
-FGameplayTag UDefaults::MakeTagFromName(const FName TagName)
+
+FGameplayTag UDefaults::MakeTagFromName(const FName& TagName)
 {
     return FGameplayTag::RequestGameplayTag(TagName);
+}
+
+FGameplayTag UDefaults::MakeTag(const FString& TagName)
+{
+    return FGameplayTag::RequestGameplayTag(FName(*TagName));
 }

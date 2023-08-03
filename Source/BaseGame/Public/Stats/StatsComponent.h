@@ -5,93 +5,114 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Stats/StatInfo.h"
+#include "Stats/StatModifier.h"
 #include "StatsComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatChanged, const FStatInfo&, StatInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatChanged, FStatInfo, StatInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatReachedZero, FStatInfo, StatInfo);
 
-UCLASS(ClassGroup = (Custom), Blueprintable, meta = (BlueprintSpawnableComponent, DisplayName = "StatsComponent"))
+UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
 class BASEGAME_API UStatsComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    // Sets default values for this component's properties
+    // Default Constructor
     UStatsComponent();
 
 protected:
-    // Called when the game starts
+    // UActorComponent Component Begin
+
     virtual void BeginPlay() override;
 
 public:
-    // Called every frame
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+    // UActorComponent Component End
+
 protected:
-    UFUNCTION(Server, Reliable, Category = "BaseGame | StatsComponent |")
+    // UStatsComponent Functions Begin
+
+    UFUNCTION(Server, Reliable)
     void Server_InitStats();
     void Server_InitStats_Implementation();
 
-    UFUNCTION(Server, WithValidation, Reliable, Category = "BaseGame | StatsComponent |")
-    void Server_RegenStart();
-    void Server_RegenStart_Implementation();
-    bool Server_RegenStart_Validate();
-
-    UFUNCTION(Server, WithValidation, Reliable, Category = "BaseGame | StatsComponent |")
-    void Server_RegenStop();
-    void Server_RegenStop_Implementation();
-    bool Server_RegenStop_Validate();
-
-    UFUNCTION(Server, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent |", meta = (DisplayName = "Set Dead", HideSelfPin))
+    UFUNCTION(Server, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent", meta = (DisplayName = "Set Dead", HideSelfPin))
     void Server_SetDead();
     void Server_SetDead_Implementation();
 
     void RegenerateStats();
 
-    UFUNCTION(BlueprintNativeEvent, BlueprintPure, Category = "BaseGame | StatsComponent |")
+    UFUNCTION(BlueprintNativeEvent, BlueprintPure, Category = "BaseGame | StatsComponent")
     bool CanRegenerateStat(const FStatInfo& Stat) const;
     bool CanRegenerateStat_Implementation(const FStatInfo& Stat) const;
 
 public:
-    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "BaseGame | StatsComponent |", meta = (AutoCreateRefTerm = "StatId", StatId = "Stat"))
-    FStatInfo GetStatInfo(UPARAM(meta = (Categories = "Stat")) const FGameplayTag& StatId);
+    UFUNCTION(BlueprintPure, Category = "BaseGame | StatsComponent", meta = (AutoCreateRefTerm = "StatId"))
+    bool GetStatInfo(const FGameplayTag& StatId, FStatInfo& Result) const;
 
-    UFUNCTION(Server, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent |", meta = (DisplayName = "ModifyStat_SERVER"))
-    void Server_ModifyStat(const FGameplayTag& StatId, const float Value, const bool bResetDelay);
-    void Server_ModifyStat_Implementation(const FGameplayTag& StatId, const float Value, const bool bResetDelay = false);
+    UFUNCTION(BlueprintPure, Category = "BaseGame | StatsComponent")
+    FDateTime CalculateDateTime(const float Time);
 
-    UFUNCTION(Server, WithValidation, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent |", meta = (DisplayName = "CallOnStatChanged"))
+    UFUNCTION(BlueprintGetter)
+    TArray<FStatInfo> GetStats() const { return Stats; }
+
+    UFUNCTION(BlueprintGetter)
+    bool IsDead() { return bDeath; }
+
+    UFUNCTION(Server, WithValidation, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent", //
+        meta = (DisplayName = "Modify Stat"))
+    void Server_ModifyStat(const FStatModifier& StatModifier);
+    bool Server_ModifyStat_Validate(const FStatModifier& StatModifier);
+    void Server_ModifyStat_Implementation(const FStatModifier& StatModifier);
+
+    UFUNCTION(Server, WithValidation, Reliable, BlueprintCallable, Category = "BaseGame | StatsComponent", //
+        meta = (DisplayName = "CallOnStatChanged"))
     void Server_CallOnStatChanged(const FStatInfo& StatInfo);
     void Server_CallOnStatChanged_Implementation(const FStatInfo& StatInfo);
     bool Server_CallOnStatChanged_Validate(const FStatInfo& StatInfo);
 
-    UFUNCTION(NetMulticast, Reliable, Category = "BaseGame | StatsComponent |")
+    UFUNCTION(NetMulticast, Reliable)
     void Multi_CallOnStatChanged(const FStatInfo& StatInfo);
     void Multi_CallOnStatChanged_Implementation(const FStatInfo& StatInfo);
 
-protected:
-    UPROPERTY(BlueprintAssignable, Category = "BaseGame | StatsComponent |")
+    // UStatsComponent Functions End
+
+public:
+    // UStatsComponent Dispatchers Begin
+
+    UPROPERTY(BlueprintAssignable, Category = "BaseGame | StatsComponent")
     FOnStatChanged OnStatChangedHandle;
 
+    UPROPERTY(BlueprintAssignable, Category = "BaseGame | StatsComponent")
+    FOnStatReachedZero OnStatReachedZero;
+
+    // UStatsComponent Dispatchers End
+
 protected:
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "BaseGame | StatsComponent |")
+    // UStatsComponent Variables Begin
+
+    UPROPERTY(Replicated, BlueprintGetter = GetStats, Category = "BaseGame | StatsComponent")
     TArray<FStatInfo> Stats;
 
-    UPROPERTY(
-        EditAnywhere, BlueprintReadOnly, Category = "BaseGame | StatsComponent |", meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | StatsComponent", //
+        meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
     TArray<FStatInfo> InitialStats;
 
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "BaseGame | StatsComponent |")
-    bool bDeath;
+    // UPROPERTY(Replicated, BlueprintReadOnly, Category = "BaseGame | StatsComponent")
+    // TArray<FStatModifier> Modifiers;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BaseGame | StatsComponent |", meta = (ClampMin = 0.0001f))
-    float RegenerationTimeInterval;
+    UPROPERTY(Replicated, BlueprintGetter = IsDead, Category = "BaseGame | StatsComponent")
+    bool bDeath = false;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BaseGame | StatsComponent", meta = (ClampMin = 0.0001f, UIMin = 0.0001f))
+    float RegenerationFrequency = 0.01f;
 
     UPROPERTY()
     FTimerHandle RegenTimer;
 
-    UPROPERTY(Replicated)
-    bool bRegenStarted;
+    // UPROPERTY()
+    // FTimerHandle ModifierTimer;
 
-    UPROPERTY()
-    TMap<FGameplayTag, FDateTime> RegenDelayMap;
+    // UStatsComponent Variables End
 };
