@@ -4,12 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Core/Defaults.h"
 #include "StatInfo.generated.h"
 
 USTRUCT(BlueprintType, meta = (DisableSplitPin))
 struct FStatInfo
 {
     GENERATED_BODY()
+    
+    FStatInfo() {}
+
+    FStatInfo(FString Id, float CurrentValue, float MaxValue)
+    {
+        this->Id = UDefaults::MakeTag(Id);
+        this->CurrentValue = CurrentValue;
+        this->MaxValue = MaxValue;
+    }
+
+    FStatInfo(FGameplayTag Id, float Value, float MaxValue, bool bCanRegenerate, float RegenerationRate, float RegenerationDelay)
+    {
+        this->Id = Id;
+        this->CurrentValue = CurrentValue;
+        this->MaxValue = MaxValue;
+        this->bCanRegenerate = bCanRegenerate;
+        this->RegenerationRate = RegenerationRate;
+        this->RegenerationDelay = RegenerationDelay;
+    }
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BaseGame | Stat |")
     FGameplayTag Id;
