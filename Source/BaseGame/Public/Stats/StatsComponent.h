@@ -89,15 +89,18 @@ public:
 
     // UStatsComponent Dispatchers End
 
-protected:
+public:
     // UStatsComponent Variables Begin
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | StatsComponent", //
+    meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
+    TArray<FStatInfo> InitialStats;
+
+protected:
     UPROPERTY(Replicated, BlueprintGetter = GetStats, Category = "BaseGame | StatsComponent")
     TArray<FStatInfo> Stats;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | StatsComponent", //
-        meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
-    TArray<FStatInfo> InitialStats;
+  
 
     // UPROPERTY(Replicated, BlueprintReadOnly, Category = "BaseGame | StatsComponent")
     // TArray<FStatModifier> Modifiers;
