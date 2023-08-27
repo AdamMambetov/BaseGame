@@ -31,7 +31,17 @@ struct FStatModifier
         this->EndDateTime = EndDateTime;
     }
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (Categories = "Stat")) FGameplayTag StatId;
+    FORCEINLINE bool operator==(FStatModifier const& Other) const
+    {
+        return StatId == Other.StatId                      //
+               && FMath::IsNearlyEqual(Value, Other.Value) //
+               && ValueTag == Other.ValueTag               //
+               && TypeTag == Other.TypeTag                 //
+               && FMath::IsNearlyEqual(Time, Other.Time);  //
+    }
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (Categories = "Stat"))
+    FGameplayTag StatId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | Stat |", meta = (ClampMin = 0.f))
     float Value = 0.f;

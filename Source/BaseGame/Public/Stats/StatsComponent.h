@@ -43,6 +43,8 @@ protected:
 
     void RegenerateStats();
 
+    void ModifierTimer();
+
     UFUNCTION(BlueprintNativeEvent, BlueprintPure, Category = "BaseGame | StatsComponent")
     bool CanRegenerateStat(const FStatInfo& Stat) const;
     bool CanRegenerateStat_Implementation(const FStatInfo& Stat) const;
@@ -54,8 +56,17 @@ public:
     UFUNCTION(BlueprintPure, Category = "BaseGame | StatsComponent")
     FDateTime CalculateDateTime(const float Time);
 
+    UFUNCTION(BlueprintCallable, Category = "BaseGame | StatsComponent")
+    void AddModifier(FStatModifier Modifier);
+
+    UFUNCTION(BlueprintCallable, Category = "BaseGame | StatsComponent")
+    void RemoveModifier(FStatModifier Modifier);
+
     UFUNCTION(BlueprintGetter)
     TArray<FStatInfo> GetStats() const { return Stats; }
+
+    UFUNCTION(BlueprintGetter)
+    TArray<FStatModifier> GetModifiers() const { return Modifiers; }
 
     UFUNCTION(BlueprintGetter)
     bool IsDead() { return bDeath; }
@@ -99,8 +110,9 @@ protected:
         meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
     TArray<FStatInfo> InitialStats;
 
-    // UPROPERTY(Replicated, BlueprintReadOnly, Category = "BaseGame | StatsComponent")
-    // TArray<FStatModifier> Modifiers;
+    UPROPERTY(EditAnywhere, BlueprintGetter = GetModifiers, Category = "BaseGame | StatsComponent", //
+        meta = (NoResetToDefault, TitleProperty = "StatId"))
+    TArray<FStatModifier> Modifiers;
 
     UPROPERTY(Replicated, BlueprintGetter = IsDead, Category = "BaseGame | StatsComponent")
     bool bDeath = false;
@@ -111,8 +123,8 @@ protected:
     UPROPERTY()
     FTimerHandle RegenTimer;
 
-    // UPROPERTY()
-    // FTimerHandle ModifierTimer;
+    UPROPERTY()
+    FTimerHandle ModifierTimerHandle;
 
     // UStatsComponent Variables End
 };

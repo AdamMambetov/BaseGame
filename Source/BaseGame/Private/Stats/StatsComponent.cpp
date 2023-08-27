@@ -6,6 +6,7 @@
 #include "GameplayTagsManager.h"
 #include "Math/UnrealMathUtility.h"
 #include "TimerManager.h"
+#include "Kismet/KismetMathLibrary.h"
 
 UStatsComponent::UStatsComponent()
 {
@@ -20,6 +21,7 @@ void UStatsComponent::BeginPlay()
     Server_InitStats();
 
     GetWorld()->GetTimerManager().SetTimer(RegenTimer, this, &UStatsComponent::RegenerateStats, RegenerationFrequency, true);
+    GetWorld()->GetTimerManager().SetTimer(ModifierTimerHandle, this, &UStatsComponent::ModifierTimer, 0.05f, true);
 }
 
 void UStatsComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -51,6 +53,12 @@ void UStatsComponent::Server_InitStats_Implementation()
 
         Stats.Add(Stat);
     }
+
+    for (auto& Modifier : Modifiers)
+    {
+        Modifier.EndDateTime = CalculateDateTime(Modifier.Time);
+        Server_ModifyStat(Modifier);
+    }
 }
 
 void UStatsComponent::Server_SetDead_Implementation()
@@ -70,6 +78,20 @@ void UStatsComponent::RegenerateStats()
         StatModifier.ValueTag = UDefaults::MakeTag("StatModifier.Value.Current");
 
         Server_ModifyStat(StatModifier);
+    }
+}
+
+void UStatsComponent::ModifierTimer()
+{
+    for (const auto& Modifier : Modifiers)
+    {
+        if (Modifier.TypeTag.MatchesTagExact(UDefaults::MakeTag("StatModifier.Type.Limited")))
+        {
+            if (UKismetMathLibrary::Now() > Modifier.EndDateTime)
+            {
+                RemoveModifier(Modifier);
+            }
+        }
     }
 }
 
@@ -99,6 +121,26 @@ FDateTime UStatsComponent::CalculateDateTime(const float Time)
 
     return FDateTime(Now.GetYear(), Now.GetMonth(), Now.GetDay(), Now.GetHour(), Now.GetMinute(), //
         Now.GetSecond() + FMath::TruncToInt(Time), Now.GetMillisecond() + (FMath::Fmod(Time, 1.f) * 1000.f));
+}
+
+void UStatsComponent::AddModifier(FStatModifier Modifier)
+{
+    Modifier.EndDateTime = CalculateDateTime(Modifier.Time);
+
+    if (!Modifier.TypeTag.MatchesTagExact(UDefaults::MakeTag("StatModifier.Type.Immediately")))
+    {
+        Modifiers.Add(Modifier);
+    }
+    Server_ModifyStat(Modifier);
+}
+
+void UStatsComponent::RemoveModifier(FStatModifier Modifier)
+{
+    if (!Modifiers.Remove(Modifier)) return;
+
+    Modifier.Value *= -1;
+    Modifier.TypeTag = UDefaults::MakeTag("StatModifier.Type.Immediately");
+    Server_ModifyStat(Modifier);
 }
 
 bool UStatsComponent::Server_ModifyStat_Validate(const FStatModifier& StatModifier)
