@@ -103,5 +103,5 @@ FGameplayTag UDefaults::MakeTagFromName(const FName& TagName)
 
 FGameplayTag UDefaults::MakeTag(const FString& TagName)
 {
-    return FGameplayTag::RequestGameplayTag(FName(*TagName));
+    return FGameplayTag::RequestGameplayTag(FName(*TagName), /** ErrorIfNotfound */ false);
 }
