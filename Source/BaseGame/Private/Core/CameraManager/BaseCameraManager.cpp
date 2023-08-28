@@ -3,9 +3,9 @@
 #include "Core/CameraManager/BaseCameraManager.h"
 #include "Net/UnrealNetwork.h"
 
-ABaseCameraManager::ABaseCameraManager() : Super()
+ABaseCameraManager::ABaseCameraManager()
 {
-    SetReplicates(true);
+    // SetReplicates(true);
 };
 
 // void ABaseCameraManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

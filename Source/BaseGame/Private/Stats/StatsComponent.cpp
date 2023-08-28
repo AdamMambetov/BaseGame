@@ -10,7 +10,7 @@
 
 UStatsComponent::UStatsComponent()
 {
-    SetIsReplicated(true);
+    // SetIsReplicated(true);
     PrimaryComponentTick.bCanEverTick = true;
 }
 
