@@ -15,12 +15,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnResetCombo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDamageStart);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDamageEnd);
 
-enum class EAttackCollisionLocation : uint8
-{
-    Left,
-    Right,
-};
-
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
 class BASEGAME_API UAttackComponent : public UActorComponent
 {
@@ -123,8 +117,6 @@ protected:
     FGameplayTag NewAttackId;
 
     FGameplayTag CurrentCharacterId;
-
-    EAttackCollisionLocation CollisionLocation;
 
     // UAttackComponent Variables End
 };

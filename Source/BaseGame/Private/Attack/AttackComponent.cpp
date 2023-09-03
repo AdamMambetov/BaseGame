@@ -3,6 +3,7 @@
 #include "Attack/AttackComponent.h"
 #include "Core/Defaults.h"
 #include "GameFramework/Actor.h"
+#include "GameplayTagContainer.h"
 
 UAttackComponent::UAttackComponent() {}
 
@@ -82,12 +83,6 @@ FGameplayTag UAttackComponent::GetNextAttackId()
         ReturnValue = Tags[FMath::RandRange(1, Tags.Num() - 1)];
     else
         ReturnValue = Tags.IsValidIndex(ComboCount + 1) ? Tags[ComboCount + 1] : FGameplayTag::EmptyTag;
-
-    if (!ReturnValue.IsValid()) return ReturnValue;
-
-    // Select attack tag by CollisionLocation (Left or Right)
-    int32 ChildrenIndex = ((int32)CollisionLocation) + 1;
-    ReturnValue = UDefaults::GetChildrensByTag(ReturnValue)[ChildrenIndex];
 
     return ReturnValue;
 }
