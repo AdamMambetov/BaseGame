@@ -4,9 +4,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Components/SkeletalMeshComponent.h"
 
-UCameraInfoComponent::UCameraInfoComponent() : Super()
+UCameraInfoComponent::UCameraInfoComponent()
 {
-    SetIsReplicated(true);
+    // SetIsReplicated(true);
 };
 
 void UCameraInfoComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

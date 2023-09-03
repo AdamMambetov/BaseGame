@@ -10,6 +10,10 @@ class UDataTable;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackStart, FAttackInfo, AttackInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackEnd, FAttackInfo, AttackInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSaveCombo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnResetCombo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDamageStart);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDamageEnd);
 
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
 class BASEGAME_API UAttackComponent : public UActorComponent
@@ -52,13 +56,17 @@ public:
     bool CanAttack_Implementation();
 
 protected:
-    UFUNCTION(BlueprintNativeEvent, Category = "BaseGame | AttackComponent")
-    void OnAttackStartEvent(FAttackInfo AttackInfo);
-    void OnAttackStartEvent_Implementation(FAttackInfo AttackInfo);
+    UFUNCTION()
+    virtual void OnAttackStartEvent(FAttackInfo AttackInfo);
 
-    UFUNCTION(BlueprintNativeEvent, Category = "BaseGame | AttackComponent")
-    void OnAttackEndEvent(FAttackInfo AttackInfo);
-    void OnAttackEndEvent_Implementation(FAttackInfo AttackInfo);
+    UFUNCTION()
+    virtual void OnAttackEndEvent(FAttackInfo AttackInfo);
+
+    UFUNCTION()
+    virtual void OnSaveComboEvent();
+
+    UFUNCTION()
+    virtual void OnResetComboEvent();
 
     UFUNCTION(BlueprintCallable, Category = "BaseGame | AttackComponent")
     virtual FGameplayTag GetNextAttackId();
@@ -73,6 +81,18 @@ public:
 
     UPROPERTY(BlueprintCallable, BlueprintAssignable, Category = "BaseGame | AttackComponent")
     FOnAttackEnd OnAttackEnd;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "BaseGame | AttackComponent")
+    FOnSaveCombo OnSaveCombo;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "BaseGame | AttackComponent")
+    FOnResetCombo OnResetCombo;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "BaseGame | AttackComponent")
+    FDamageStart OnDamageStart;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "BaseGame | AttackComponent")
+    FDamageEnd OnDamageEnd;
 
     // UAttackComponent Dispatchers End
 
@@ -90,6 +110,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "BaseGame | AttackComponent", meta = (AllowPrivateAccess = "true"))
     UDataTable* AttacksDataTable;
+
+    UPROPERTY(EditDefaultsOnly, Category = "BaseGame | AttackComponent")
+    bool bIsRandomAttack = false;
 
     FGameplayTag NewAttackId;
 

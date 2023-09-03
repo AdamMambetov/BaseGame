@@ -3,6 +3,7 @@
 #include "Attack/AttackComponent.h"
 #include "Core/Defaults.h"
 #include "GameFramework/Actor.h"
+#include "GameplayTagContainer.h"
 
 UAttackComponent::UAttackComponent() {}
 
@@ -16,6 +17,8 @@ void UAttackComponent::BeginPlay()
 
     OnAttackStart.AddDynamic(this, &UAttackComponent::OnAttackStartEvent);
     OnAttackEnd.AddDynamic(this, &UAttackComponent::OnAttackEndEvent);
+    OnSaveCombo.AddDynamic(this, &UAttackComponent::OnSaveComboEvent);
+    OnResetCombo.AddDynamic(this, &UAttackComponent::OnResetComboEvent);
 }
 
 void UAttackComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -31,10 +34,9 @@ void UAttackComponent::Attack()
         AttackById(GetNextAttackId());
         break;
     case EAttackState::Attack:
-        // AttackState = EAttackState::SaveCombo;
+        AttackState = bIsRandomAttack ? AttackState : EAttackState::SaveCombo;
         break;
     case EAttackState::SaveCombo:
-        // if ()
         break;
     }
 }
@@ -43,13 +45,11 @@ void UAttackComponent::AttackById(const FGameplayTag AttackId)
 {
     NewAttackId = AttackId;
     if (!CanAttack()) return;
+    if (UDefaults::GetTagParents(NewAttackId).Last(/*IndexFromTheEnd*/ 1) != CurrentCharacterId) return;
 
     const auto L_NewAttackInfo = *AttacksDataTable->FindRow<FAttackInfo>(NewAttackId.GetTagName(), "");
-    if (UDefaults::GetTagParent(L_NewAttackInfo.Id) != CurrentCharacterId) return;
-
     CurrentAttackInfo = L_NewAttackInfo;
     AttackState = EAttackState::Attack;
-    // ComboCount = CurrentAttackInfo.ComboCount;
     OnAttackStart.Broadcast(CurrentAttackInfo);
 }
 
@@ -60,9 +60,9 @@ bool UAttackComponent::CanAttack_Implementation()
             AttacksDataTable->GetRowNames().Contains(NewAttackId.GetTagName()));
 }
 
-void UAttackComponent::OnAttackStartEvent_Implementation(FAttackInfo AttackInfo) {}
+void UAttackComponent::OnAttackStartEvent(FAttackInfo AttackInfo) {}
 
-void UAttackComponent::OnAttackEndEvent_Implementation(FAttackInfo AttackInfo)
+void UAttackComponent::OnAttackEndEvent(FAttackInfo AttackInfo)
 {
     if (AttackInfo.Id != CurrentAttackInfo.Id) return;
 
@@ -76,11 +76,30 @@ FGameplayTag UAttackComponent::GetNextAttackId()
     FGameplayTag ReturnValue = FGameplayTag::EmptyTag;
 
     auto Tags = UDefaults::GetChildrensByTag(CurrentCharacterId);
-    if (Tags.Num() == 0 || !AttacksDataTable) return ReturnValue;
+    if (Tags.Num() <= 1 || !IsValid(AttacksDataTable)) return ReturnValue;
 
-    while (!AttacksDataTable->GetRowNames().Contains(ReturnValue.GetTagName()))
-    {
-        ReturnValue = Tags[FMath::RandRange(0, Tags.Num() - 1)];
-    }
+    // Select next attack tag
+    if (bIsRandomAttack)
+        ReturnValue = Tags[FMath::RandRange(1, Tags.Num() - 1)];
+    else
+        ReturnValue = Tags.IsValidIndex(ComboCount + 1) ? Tags[ComboCount + 1] : FGameplayTag::EmptyTag;
+
     return ReturnValue;
+}
+
+void UAttackComponent::OnSaveComboEvent()
+{
+    if (AttackState != EAttackState::SaveCombo) return;
+    AttackState = EAttackState::None;
+    ComboCount++;
+    NewAttackId = FGameplayTag::EmptyTag;
+    AttackById(GetNextAttackId());
+}
+
+void UAttackComponent::OnResetComboEvent()
+{
+    AttackState = EAttackState::None;
+    CurrentAttackInfo = FAttackInfo();
+    ComboCount = 0;
+    NewAttackId = FGameplayTag::EmptyTag;
 }
