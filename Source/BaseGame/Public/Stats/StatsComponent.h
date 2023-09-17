@@ -104,14 +104,12 @@ public:
     // UStatsComponent Variables Begin
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseGame | StatsComponent", //
-    meta = (ExposeOnSpawn = true, NoResetToDefault, TitleProperty = "ID"))
+        meta = (ExposeOnSpawn = true, TitleProperty = "Id"))
     TArray<FStatInfo> InitialStats;
 
 protected:
     UPROPERTY(Replicated, BlueprintGetter = GetStats, Category = "BaseGame | StatsComponent")
     TArray<FStatInfo> Stats;
-
-  
 
     UPROPERTY(EditAnywhere, BlueprintGetter = GetModifiers, Category = "BaseGame | StatsComponent", //
         meta = (NoResetToDefault, TitleProperty = "StatId"))
