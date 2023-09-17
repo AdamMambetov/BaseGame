@@ -10,6 +10,8 @@ void USaveComboNotify::Notify(                       //
 {
     Super::Notify(MeshComp, Animation, EventReference);
 
+    if (!IsValid(MeshComp)) return;
+    if (!IsValid(MeshComp->GetOwner())) return;
     auto AttackComp = MeshComp->GetOwner()->GetComponentByClass<UAttackComponent>();
     if (!IsValid(AttackComp)) return;
 
